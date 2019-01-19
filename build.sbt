@@ -25,7 +25,7 @@ lazy val root = (project in file(".")).
     libraryDependencies += "org.apache.logging.log4j" % "log4j-core" % "2.11.1"
 )
 
-assembly / mainClass := Some("com.github.codelionx.Job")
+assembly / mainClass := Some("com.github.codelionx.AnalyzeHTTPLog")
 
 // make run command include the provided dependencies
 Compile / run  := Defaults.runTask(Compile / fullClasspath,
