@@ -1,11 +1,12 @@
 package com.github.codelionx
 
-import java.time.ZonedDateTime
+import java.time._
 import java.time.format.DateTimeFormatter
 
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
+import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.util.Collector
 import org.backuity.clist
 import org.backuity.clist.CliMain
@@ -77,7 +78,18 @@ object AnalyzeHTTPLog extends CliMain[Unit](
     val env = setupEnvironment()
 
     val httpTextLog = getLogStream(env)
-    httpTextLog.print()
+
+    // count all requests per day
+    httpTextLog
+      .timeWindowAll(Time.days(1))
+      .apply( (window, events, out: Collector[(LocalDate, Int)]) =>
+        out.collect((
+          ZonedDateTime.ofInstant(Instant.ofEpochMilli(window.getStart), ZoneId.of("UTC")).toLocalDate,
+          events.count(_ => true)
+        ))
+      )
+      .map(t => s"Requests/day for day ${t._1} : ${t._2}")
+      .print()
 
     // execute program
     env.execute("Flink Scala API Skeleton")
@@ -104,6 +116,6 @@ object AnalyzeHTTPLog extends CliMain[Unit](
         case Failure(e) => log.warn(s"Ignoring log entry $logLine", e)
       }
     })
-    entryStream.assignAscendingTimestamps( logEntry => logEntry.date.toInstant.getEpochSecond )
+    entryStream.assignAscendingTimestamps( logEntry => logEntry.date.toInstant.toEpochMilli )
   }
 }
