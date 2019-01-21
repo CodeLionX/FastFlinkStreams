@@ -4,6 +4,7 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 import org.apache.flink.api.scala._
+import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.apache.flink.util.Collector
 import org.backuity.clist
@@ -89,16 +90,20 @@ object AnalyzeHTTPLog extends CliMain[Unit](
     env.setMaxParallelism(cores)
     env.setParallelism(cores)
 
+    // time characteristic
+    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
+
     env
   }
 
   private def getLogStream(env: StreamExecutionEnvironment): DataStream[HTTPLogEntry] = {
     val textStream = env.readTextFile(path, "UTF-8")
-    textStream.flatMap( (logLine: String, collector: Collector[HTTPLogEntry]) => {
+    val entryStream = textStream.flatMap( (logLine: String, collector: Collector[HTTPLogEntry]) => {
       HTTPLogEntry.fromString(logLine) match {
         case Success(logEntry) => collector.collect(logEntry)
         case Failure(e) => log.warn(s"Ignoring log entry $logLine", e)
       }
     })
+    entryStream.assignAscendingTimestamps( logEntry => logEntry.date.toInstant.getEpochSecond )
   }
 }
