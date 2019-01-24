@@ -17,8 +17,8 @@ val clistVersion = "3.5.0"
 lazy val root = (project in file(".")).
   settings(
     libraryDependencies ++= Seq(
-      "org.apache.flink" %% "flink-scala" % flinkVersion % "provided",
-      "org.apache.flink" %% "flink-streaming-scala" % flinkVersion % "provided"
+      "org.apache.flink" %% "flink-scala" % flinkVersion,
+      "org.apache.flink" %% "flink-streaming-scala" % flinkVersion
     ),
     libraryDependencies ++= Seq(
       // logging
@@ -45,4 +45,4 @@ Compile / run / fork := true
 Global / cancelable := true
 
 // exclude Scala library from assembly
-assembly / assemblyOption  := (assembly / assemblyOption).value.copy(includeScala = false)
+assembly / assemblyOption  := (assembly / assemblyOption).value.copy(includeScala = true)
